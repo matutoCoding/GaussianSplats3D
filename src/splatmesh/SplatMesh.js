@@ -843,6 +843,9 @@ export class SplatMesh extends THREE.Mesh {
                             if (shComponentCountPerChannel >= 8) {
                                 for (let i = 0; i < 5; i++) paddedSHArray[destBase + 3 + i] = shData[srcBase + 9 + t * 5 + i];
                             }
+                            if (shComponentCountPerChannel >= 15) {
+                                for (let i = 0; i < 7; i++) paddedSHArray[destBase + 8 + i] = shData[srcBase + 24 + t * 7 + i];
+                            }
                         }
                     }
 
@@ -1032,6 +1035,9 @@ export class SplatMesh extends THREE.Mesh {
                             for (let i = 0; i < 3; i++) paddedSHArray[destBase + i] = shData[srcBase + t * 3 + i];
                             if (shComponentCountPerChannel >= 8) {
                                 for (let i = 0; i < 5; i++) paddedSHArray[destBase + 3 + i] = shData[srcBase + 9 + t * 5 + i];
+                            }
+                            if (shComponentCountPerChannel >= 15) {
+                                for (let i = 0; i < 7; i++) paddedSHArray[destBase + 8 + i] = shData[srcBase + 24 + t * 7 + i];
                             }
                         }
                     }

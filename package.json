@@ -22,6 +22,8 @@
         "demo": "node util/server.js -d ./build/demo",
         "fix-styling": "npx stylelint **/*.scss --fix",
         "fix-js": "npx eslint src --fix",
+        "test": "node test/degree3.e2e.test.js && node test/degree3-rotation.test.js && node test/shader-regression.test.js && node test/validate-sh-rotation.js",
+        "test:sh3": "node test/degree3.e2e.test.js",
         "lint": "npx eslint 'src/**/*.js' || true",
         "prettify": "npx prettier --write 'src/**/*.js'"
     },

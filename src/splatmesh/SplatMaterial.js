@@ -202,6 +202,18 @@ export class SplatMaterial {
                 `;
             }
 
+            if (maxSphericalHarmonicsDegree >= 3) {
+                vertexShaderSource += `
+                    vec3 sh9;
+                    vec3 sh10;
+                    vec3 sh11;
+                    vec3 sh12;
+                    vec3 sh13;
+                    vec3 sh14;
+                    vec3 sh15;
+                `;
+            }
+
             // Determining how to sample spherical harmonics textures to get the coefficients for calculations for a given degree
             // depends on how many total degrees (maxSphericalHarmonicsDegree) are present in the textures. This is because that
             // number affects how they are packed in the textures, and therefore the offset & stride required to access them.
@@ -253,6 +265,33 @@ export class SplatMaterial {
                         sampledSH0123R = texture(sphericalHarmonicsTextureR, getDataUV(2, 0, sphericalHarmonicsTextureSize));
                         sampledSH0123G = texture(sphericalHarmonicsTextureG, getDataUV(2, 0, sphericalHarmonicsTextureSize));
                         sampledSH0123B = texture(sphericalHarmonicsTextureB, getDataUV(2, 0, sphericalHarmonicsTextureSize));
+                        sh1 = vec3(sampledSH0123R.rgb);
+                        sh2 = vec3(sampledSH0123G.rgb);
+                        sh3 = vec3(sampledSH0123B.rgb);
+                    }
+                `;
+            // Sample spherical harmonics textures with 3 degrees worth of data for 1st degree calculations
+            } else if (maxSphericalHarmonicsDegree === 3) {
+                vertexShaderSource += `
+                    vec4 sampledSH0123;
+                    vec4 sampledSH4567;
+                    vec4 sampledSH891011;
+
+                    vec4 sampledSH0123R;
+                    vec4 sampledSH0123G;
+                    vec4 sampledSH0123B;
+
+                    if (sphericalHarmonicsMultiTextureMode == 0) {
+                        sampledSH0123 = texture(sphericalHarmonicsTexture, getDataUV(12, 0, sphericalHarmonicsTextureSize));
+                        sampledSH4567 = texture(sphericalHarmonicsTexture, getDataUV(12, 1, sphericalHarmonicsTextureSize));
+                        sampledSH891011 = texture(sphericalHarmonicsTexture, getDataUV(12, 2, sphericalHarmonicsTextureSize));
+                        sh1 = sampledSH0123.rgb;
+                        sh2 = vec3(sampledSH0123.a, sampledSH4567.rg);
+                        sh3 = vec3(sampledSH4567.ba, sampledSH891011.r);
+                    } else {
+                        sampledSH0123R = texture(sphericalHarmonicsTextureR, getDataUV(4, 0, sphericalHarmonicsTextureSize));
+                        sampledSH0123G = texture(sphericalHarmonicsTextureG, getDataUV(4, 0, sphericalHarmonicsTextureSize));
+                        sampledSH0123B = texture(sphericalHarmonicsTextureB, getDataUV(4, 0, sphericalHarmonicsTextureSize));
                         sh1 = vec3(sampledSH0123R.rgb);
                         sh2 = vec3(sampledSH0123G.rgb);
                         sh3 = vec3(sampledSH0123B.rgb);
@@ -312,6 +351,31 @@ export class SplatMaterial {
                     `;
                 }
 
+                // Sample spherical harmonics textures with 3 degrees worth of data for 2nd degree calculations
+                if (maxSphericalHarmonicsDegree === 3) {
+                    vertexShaderSource += `
+                        if (sphericalHarmonicsMultiTextureMode == 0) {
+                            vec4 sampledSH12131415 = texture(sphericalHarmonicsTexture, getDataUV(12, 3, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH16171819 = texture(sphericalHarmonicsTexture, getDataUV(12, 4, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH20212223 = texture(sphericalHarmonicsTexture, getDataUV(12, 5, sphericalHarmonicsTextureSize));
+                            sh4 = sampledSH891011.gba;
+                            sh5 = sampledSH12131415.rgb;
+                            sh6 = vec3(sampledSH12131415.a, sampledSH16171819.rg);
+                            sh7 = vec3(sampledSH16171819.ba, sampledSH20212223.r);
+                            sh8 = sampledSH20212223.gba;
+                        } else {
+                            vec4 sampledSH4567R = texture(sphericalHarmonicsTextureR, getDataUV(4, 1, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH4567G = texture(sphericalHarmonicsTextureG, getDataUV(4, 1, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH4567B = texture(sphericalHarmonicsTextureB, getDataUV(4, 1, sphericalHarmonicsTextureSize));
+                            sh4 = vec3(sampledSH0123R.a, sampledSH4567R.rg);
+                            sh5 = vec3(sampledSH4567R.ba, sampledSH0123G.a);
+                            sh6 = vec3(sampledSH4567G.rgb);
+                            sh7 = vec3(sampledSH4567G.a, sampledSH0123B.a, sampledSH4567B.r);
+                            sh8 = vec3(sampledSH4567B.gba);
+                        }
+                    `;
+                }
+
                 // Perform 2nd degree spherical harmonics calculations
                 vertexShaderSource += `
                         if (sphericalHarmonics8BitMode == 1) {
@@ -330,6 +394,82 @@ export class SplatMaterial {
                             (SH_C2[4] * (xx - yy)) * sh8;
                     }
                 `;
+
+                // Proceed to sampling and rendering 3rd degree spherical harmonics
+                if (maxSphericalHarmonicsDegree === 3) {
+
+                    vertexShaderSource += `
+                    if (sphericalHarmonicsDegree >= 3) {
+                        float xxx = x * xx;
+                        float yyy = y * yy;
+                        float zzz = z * zz;
+                        float xyy = x * yy;
+                        float xzz = x * zz;
+                        float xxy = xx * y;
+                        float yzz = y * zz;
+                        float xyz = xy * z;
+                `;
+
+                    vertexShaderSource += `
+                        if (sphericalHarmonicsMultiTextureMode == 0) {
+                            // 45 components per splat, padded to 48 => 12 RGBA texels.
+                            // Degree 3 occupies texels 6..10 (component offsets 24..44).
+                            vec4 sampledSH24252627 = texture(sphericalHarmonicsTexture, getDataUV(12, 6, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH28293031 = texture(sphericalHarmonicsTexture, getDataUV(12, 7, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH32333435 = texture(sphericalHarmonicsTexture, getDataUV(12, 8, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH36373839 = texture(sphericalHarmonicsTexture, getDataUV(12, 9, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH40414243 = texture(sphericalHarmonicsTexture, getDataUV(12, 10, sphericalHarmonicsTextureSize));
+                            sh9  = sampledSH24252627.rgb;
+                            sh10 = vec3(sampledSH24252627.a, sampledSH28293031.rg);
+                            sh11 = vec3(sampledSH28293031.ba, sampledSH32333435.r);
+                            sh12 = vec3(sampledSH32333435.gba);
+                            sh13 = vec3(sampledSH36373839.rgb);
+                            sh14 = vec3(sampledSH36373839.a, sampledSH40414243.rg);
+                            sh15 = vec3(sampledSH40414243.ba);
+                        } else {
+                            // Per-channel textures hold 15 components padded to 16 => 4 RGBA texels.
+                            // Degree 3 occupies per-channel offsets 8..14 (texels 2..3).
+                            // Each sampled vec4 maps to one degree-3 coeff per color channel.
+                            vec4 sampledSH891011R = texture(sphericalHarmonicsTextureR, getDataUV(4, 2, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH12131415R = texture(sphericalHarmonicsTextureR, getDataUV(4, 3, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH891011G = texture(sphericalHarmonicsTextureG, getDataUV(4, 2, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH12131415G = texture(sphericalHarmonicsTextureG, getDataUV(4, 3, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH891011B = texture(sphericalHarmonicsTextureB, getDataUV(4, 2, sphericalHarmonicsTextureSize));
+                            vec4 sampledSH12131415B = texture(sphericalHarmonicsTextureB, getDataUV(4, 3, sphericalHarmonicsTextureSize));
+                            sh9  = vec3(sampledSH891011R.r, sampledSH891011G.r, sampledSH891011B.r);
+                            sh10 = vec3(sampledSH891011R.g, sampledSH891011G.g, sampledSH891011B.g);
+                            sh11 = vec3(sampledSH891011R.b, sampledSH891011G.b, sampledSH891011B.b);
+                            sh12 = vec3(sampledSH891011R.a, sampledSH891011G.a, sampledSH891011B.a);
+                            sh13 = vec3(sampledSH12131415R.r, sampledSH12131415G.r, sampledSH12131415B.r);
+                            sh14 = vec3(sampledSH12131415R.g, sampledSH12131415G.g, sampledSH12131415B.g);
+                            sh15 = vec3(sampledSH12131415R.b, sampledSH12131415G.b, sampledSH12131415B.b);
+                        }
+                    `;
+
+                    vertexShaderSource += `
+                        const float[7] SH_C3 = float[](-0.5900436, 2.8906114, -0.4570458, 0.3731763,
+                                                       -0.4570458, 1.4453057, -0.5900436);
+                        if (sphericalHarmonics8BitMode == 1) {
+                            sh9  = sh9  * sh8BitCompressionRangeForScene + vec8BitSHShift;
+                            sh10 = sh10 * sh8BitCompressionRangeForScene + vec8BitSHShift;
+                            sh11 = sh11 * sh8BitCompressionRangeForScene + vec8BitSHShift;
+                            sh12 = sh12 * sh8BitCompressionRangeForScene + vec8BitSHShift;
+                            sh13 = sh13 * sh8BitCompressionRangeForScene + vec8BitSHShift;
+                            sh14 = sh14 * sh8BitCompressionRangeForScene + vec8BitSHShift;
+                            sh15 = sh15 * sh8BitCompressionRangeForScene + vec8BitSHShift;
+                        }
+
+                        vColor.rgb +=
+                            (SH_C3[0] * y * (3.0 * xx - yy)) * sh9 +
+                            (SH_C3[1] * xyz) * sh10 +
+                            (SH_C3[2] * y * (5.0 * zz - 1.0)) * sh11 +
+                            (SH_C3[3] * z * (5.0 * zz - 3.0)) * sh12 +
+                            (SH_C3[4] * x * (5.0 * zz - 1.0)) * sh13 +
+                            (SH_C3[5] * z * (xx - yy)) * sh14 +
+                            (SH_C3[6] * x * (xx - 3.0 * yy)) * sh15;
+                    }
+                `;
+                }
             }
 
             vertexShaderSource += `

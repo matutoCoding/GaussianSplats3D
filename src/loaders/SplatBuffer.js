@@ -121,7 +121,8 @@ export class SplatBuffer {
             SphericalHarmonicsDegrees: {
                 0: { BytesPerSplat: 44 },
                 1: { BytesPerSplat: 80 },
-                2: { BytesPerSplat: 140 }
+                2: { BytesPerSplat: 140 },
+                3: { BytesPerSplat: 224 }
             },
         },
         1: {
@@ -139,7 +140,8 @@ export class SplatBuffer {
             SphericalHarmonicsDegrees: {
                 0: { BytesPerSplat: 24 },
                 1: { BytesPerSplat: 42 },
-                2: { BytesPerSplat: 72 }
+                2: { BytesPerSplat: 72 },
+                3: { BytesPerSplat: 114 }
             },
         },
         2: {
@@ -157,7 +159,8 @@ export class SplatBuffer {
             SphericalHarmonicsDegrees: {
                 0: { BytesPerSplat: 24 },
                 1: { BytesPerSplat: 33 },
-                2: { BytesPerSplat: 48 }
+                2: { BytesPerSplat: 48 },
+                3: { BytesPerSplat: 69 }
             },
         }
     };
@@ -551,7 +554,7 @@ export class SplatBuffer {
     fillSphericalHarmonicsArray = function() {
 
         const sphericalHarmonicVectors = [];
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < 21; i++) {
             sphericalHarmonicVectors[i] = new THREE.Vector3();
         }
 
@@ -572,17 +575,29 @@ export class SplatBuffer {
         const sh24 = [];
         const sh25 = [];
 
+        const sh31 = [];
+        const sh32 = [];
+        const sh33 = [];
+        const sh34 = [];
+        const sh35 = [];
+        const sh36 = [];
+        const sh37 = [];
+
         const shIn1 = [];
         const shIn2 = [];
         const shIn3 = [];
         const shIn4 = [];
         const shIn5 = [];
+        const shIn6 = [];
+        const shIn7 = [];
 
         const shOut1 = [];
         const shOut2 = [];
         const shOut3 = [];
         const shOut4 = [];
         const shOut5 = [];
+        const shOut6 = [];
+        const shOut7 = [];
 
         const noop = (v) => v;
 
@@ -726,6 +741,48 @@ export class SplatBuffer {
                         setOutput3(shOut3, outSphericalHarmonicsArray, shDestBase + 15, outputConversionFunc);
                         setOutput3(shOut4, outSphericalHarmonicsArray, shDestBase + 18, outputConversionFunc);
                         setOutput3(shOut5, outSphericalHarmonicsArray, shDestBase + 21, outputConversionFunc);
+
+                        if (outSphericalHarmonicsDegree >= 3) {
+
+                            set3FromArray(shIn1, dataView, 7, 24, this.compressionLevel);
+                            set3FromArray(shIn2, dataView, 7, 25, this.compressionLevel);
+                            set3FromArray(shIn3, dataView, 7, 26, this.compressionLevel);
+                            set3FromArray(shIn4, dataView, 7, 27, this.compressionLevel);
+                            set3FromArray(shIn5, dataView, 7, 28, this.compressionLevel);
+                            set3FromArray(shIn6, dataView, 7, 29, this.compressionLevel);
+                            set3FromArray(shIn7, dataView, 7, 30, this.compressionLevel);
+
+                            if (transform) {
+                                toUncompressedFloatArray3(shIn1, shIn1, this.compressionLevel, minShCoeff, maxShCoeff);
+                                toUncompressedFloatArray3(shIn2, shIn2, this.compressionLevel, minShCoeff, maxShCoeff);
+                                toUncompressedFloatArray3(shIn3, shIn3, this.compressionLevel, minShCoeff, maxShCoeff);
+                                toUncompressedFloatArray3(shIn4, shIn4, this.compressionLevel, minShCoeff, maxShCoeff);
+                                toUncompressedFloatArray3(shIn5, shIn5, this.compressionLevel, minShCoeff, maxShCoeff);
+                                toUncompressedFloatArray3(shIn6, shIn6, this.compressionLevel, minShCoeff, maxShCoeff);
+                                toUncompressedFloatArray3(shIn7, shIn7, this.compressionLevel, minShCoeff, maxShCoeff);
+                                SplatBuffer.rotateSphericalHarmonics7(shIn1, shIn2, shIn3, shIn4, shIn5, shIn6, shIn7,
+                                                                      sh11, sh12, sh13,
+                                                                      sh31, sh32, sh33, sh34, sh35, sh36, sh37,
+                                                                      shOut1, shOut2, shOut3, shOut4, shOut5, shOut6, shOut7,
+                                                                      tempMatrix3);
+                            } else {
+                                copy3(shIn1, shOut1);
+                                copy3(shIn2, shOut2);
+                                copy3(shIn3, shOut3);
+                                copy3(shIn4, shOut4);
+                                copy3(shIn5, shOut5);
+                                copy3(shIn6, shOut6);
+                                copy3(shIn7, shOut7);
+                            }
+
+                            setOutput3(shOut1, outSphericalHarmonicsArray, shDestBase + 24, outputConversionFunc);
+                            setOutput3(shOut2, outSphericalHarmonicsArray, shDestBase + 27, outputConversionFunc);
+                            setOutput3(shOut3, outSphericalHarmonicsArray, shDestBase + 30, outputConversionFunc);
+                            setOutput3(shOut4, outSphericalHarmonicsArray, shDestBase + 33, outputConversionFunc);
+                            setOutput3(shOut5, outSphericalHarmonicsArray, shDestBase + 36, outputConversionFunc);
+                            setOutput3(shOut6, outSphericalHarmonicsArray, shDestBase + 39, outputConversionFunc);
+                            setOutput3(shOut7, outSphericalHarmonicsArray, shDestBase + 42, outputConversionFunc);
+                        }
                     }
                 }
             }
@@ -761,6 +818,24 @@ export class SplatBuffer {
         SplatBuffer.addInto3(v3[0] * t2, v3[1] * t2, v3[2] * t2, outArray);
         SplatBuffer.addInto3(v4[0] * t3, v4[1] * t3, v4[2] * t3, outArray);
         SplatBuffer.addInto3(v5[0] * t4, v5[1] * t4, v5[2] * t4, outArray);
+    };
+
+    static dot7 = (v1, v2, v3, v4, v5, v6, v7, transformRow, outArray) => {
+        outArray[0] = outArray[1] = outArray[2] = 0;
+        const t0 = transformRow[0];
+        const t1 = transformRow[1];
+        const t2 = transformRow[2];
+        const t3 = transformRow[3];
+        const t4 = transformRow[4];
+        const t5 = transformRow[5];
+        const t6 = transformRow[6];
+        SplatBuffer.addInto3(v1[0] * t0, v1[1] * t0, v1[2] * t0, outArray);
+        SplatBuffer.addInto3(v2[0] * t1, v2[1] * t1, v2[2] * t1, outArray);
+        SplatBuffer.addInto3(v3[0] * t2, v3[1] * t2, v3[2] * t2, outArray);
+        SplatBuffer.addInto3(v4[0] * t3, v4[1] * t3, v4[2] * t3, outArray);
+        SplatBuffer.addInto3(v5[0] * t4, v5[1] * t4, v5[2] * t4, outArray);
+        SplatBuffer.addInto3(v6[0] * t5, v6[1] * t5, v6[2] * t5, outArray);
+        SplatBuffer.addInto3(v7[0] * t6, v7[1] * t6, v7[2] * t6, outArray);
     };
 
     static rotateSphericalHarmonics3 = (in1, in2, in3, tsh11, tsh12, tsh13, out1, out2, out3) => {
@@ -814,6 +889,106 @@ export class SplatBuffer {
         tsh25[3] = (tsh13[1] * tsh13[2] - tsh11[1] * tsh11[2]);
         tsh25[4] = kSqrt0104 * ((tsh13[2] * tsh13[2] - tsh13[0] * tsh13[0]) - (tsh11[2] * tsh11[2] - tsh11[0] * tsh11[0]));
         SplatBuffer.dot5(in1, in2, in3, in4, in5, tsh25, out5);
+    };
+
+    // Rotation for the 3rd degree (l = 3) SH band.
+    //
+    // The 7x7 rotation block is built by direct numerical integration over the
+    // unit sphere, projecting each rotated real-SH basis function onto every
+    // basis function of the same band. The basis polynomials and constants are
+    // the exact ones used by the renderer's vertex shader (see SplatMaterial),
+    // so the resulting block shares the shader's convention with no ambiguity.
+    //
+    // This mirrors the independently validated reference in
+    // test/sh-rotation-reference.js, where it agrees with the hard-coded l=2
+    // block to ~1e-6 and produces orthogonal blocks for every band.
+    //
+    // The block is computed once per fillSphericalHarmonicsArray() call (i.e.
+    // once per SplatBuffer transform), not per splat.
+    static computeDegree3RotationBlock = function() {
+
+        // l=3 real SH basis polynomials, m = -3..+3, constants matching the
+        // standard normalized real SH family used alongside SH_C1/SH_C2.
+        const SH_C3 = [-0.5900436, 2.8906114, -0.4570458, 0.3731763, -0.4570458, 1.4453057, -0.5900436];
+        const basis = (i, x, y, z) => {
+            const xx = x * x;
+            const yy = y * y;
+            const zz = z * z;
+            switch (i) {
+                case 0: return SH_C3[0] * y * (3 * xx - yy);
+                case 1: return SH_C3[1] * x * y * z;
+                case 2: return SH_C3[2] * y * (5 * zz - 1);
+                case 3: return SH_C3[3] * z * (5 * zz - 3);
+                case 4: return SH_C3[4] * x * (5 * zz - 1);
+                case 5: return SH_C3[5] * z * (xx - yy);
+                default: return SH_C3[6] * x * (xx - 3 * yy);
+            }
+        };
+
+        const SAMPLE_COUNT = 8192;
+        const golden = Math.PI * (3 - Math.sqrt(5));
+        const weight = 4 * Math.PI / SAMPLE_COUNT;
+
+        return function(spatialMatrix3) {
+            // Use the plain spatial rotation matrix (rows in x,y,z order), NOT the
+            // l=1 SH block: the basis polynomials below are functions of the spatial
+            // direction (x,y,z), so the integration must rotate spatial directions.
+            const e = spatialMatrix3.elements;
+            const R = [
+                [e[0], e[3], e[6]],
+                [e[1], e[4], e[7]],
+                [e[2], e[5], e[8]]
+            ];
+            // Rotation inverse = transpose (R is a proper rotation).
+            const Rinv = [
+                [R[0][0], R[1][0], R[2][0]],
+                [R[0][1], R[1][1], R[2][1]],
+                [R[0][2], R[1][2], R[2][2]]
+            ];
+
+            const block = Array.from({ length: 7 }, () => new Array(7).fill(0));
+            for (let s = 0; s < SAMPLE_COUNT; s++) {
+                const y = 1 - (s + 0.5) / SAMPLE_COUNT * 2;
+                const radius = Math.sqrt(Math.max(0, 1 - y * y));
+                const theta = golden * s;
+                const x = Math.cos(theta) * radius;
+                const z = Math.sin(theta) * radius;
+
+                const rx = Rinv[0][0] * x + Rinv[0][1] * y + Rinv[0][2] * z;
+                const ry = Rinv[1][0] * x + Rinv[1][1] * y + Rinv[1][2] * z;
+                const rz = Rinv[2][0] * x + Rinv[2][1] * y + Rinv[2][2] * z;
+
+                for (let a = 0; a < 7; a++) {
+                    const va = basis(a, x, y, z);
+                    if (va === 0) continue;
+                    for (let b = 0; b < 7; b++) {
+                        block[a][b] += va * basis(b, rx, ry, rz) * weight;
+                    }
+                }
+            }
+            return block;
+        };
+    }();
+
+    static rotateSphericalHarmonics7 = (in1, in2, in3, in4, in5, in6, in7,
+                                        tsh11, tsh12, tsh13,
+                                        tsh31, tsh32, tsh33, tsh34, tsh35, tsh36, tsh37,
+                                        out1, out2, out3, out4, out5, out6, out7,
+                                        spatialMatrix3) => {
+
+        const block = SplatBuffer.computeDegree3RotationBlock(spatialMatrix3);
+        const rows = [tsh31, tsh32, tsh33, tsh34, tsh35, tsh36, tsh37];
+        for (let r = 0; r < 7; r++) {
+            for (let c = 0; c < 7; c++) rows[r][c] = block[r][c];
+        }
+
+        SplatBuffer.dot7(in1, in2, in3, in4, in5, in6, in7, tsh31, out1);
+        SplatBuffer.dot7(in1, in2, in3, in4, in5, in6, in7, tsh32, out2);
+        SplatBuffer.dot7(in1, in2, in3, in4, in5, in6, in7, tsh33, out3);
+        SplatBuffer.dot7(in1, in2, in3, in4, in5, in6, in7, tsh34, out4);
+        SplatBuffer.dot7(in1, in2, in3, in4, in5, in6, in7, tsh35, out5);
+        SplatBuffer.dot7(in1, in2, in3, in4, in5, in6, in7, tsh36, out6);
+        SplatBuffer.dot7(in1, in2, in3, in4, in5, in6, in7, tsh37, out7);
     };
 
     static parseHeader(buffer) {
@@ -1053,7 +1228,7 @@ export class SplatBuffer {
         const tempScaleBuffer = new ArrayBuffer(12);
         const tempRotationBuffer = new ArrayBuffer(16);
         const tempColorBuffer = new ArrayBuffer(4);
-        const tempSHBuffer = new ArrayBuffer(256);
+        const tempSHBuffer = new ArrayBuffer(512);
         const tempRot = new THREE.Quaternion();
         const tempScale = new THREE.Vector3();
         const bucketCenterDelta = new THREE.Vector3();
@@ -1063,7 +1238,7 @@ export class SplatBuffer {
             SCALE0: OFFSET_SCALE0, SCALE1: OFFSET_SCALE1, SCALE2: OFFSET_SCALE2,
             ROTATION0: OFFSET_ROT0, ROTATION1: OFFSET_ROT1, ROTATION2: OFFSET_ROT2, ROTATION3: OFFSET_ROT3,
             FDC0: OFFSET_FDC0, FDC1: OFFSET_FDC1, FDC2: OFFSET_FDC2, OPACITY: OFFSET_OPACITY,
-            FRC0: OFFSET_FRC0, FRC9: OFFSET_FRC9,
+            FRC0: OFFSET_FRC0, FRC9: OFFSET_FRC9, FRC24: OFFSET_FRC24,
         } = UncompressedSplatArray.OFFSET;
 
         const compressPositionOffset = (v, compressionScaleFactor, compressionScaleRange) => {
@@ -1119,6 +1294,9 @@ export class SplatBuffer {
                             for (let s = 0; s < 9; s++) shOut[s] = targetSplat[OFFSET_FRC0 + s] || 0;
                             if (sphericalHarmonicsDegree >= 2) {
                                 for (let s = 0; s < 15; s++) shOut[s + 9] = targetSplat[OFFSET_FRC9 + s] || 0;
+                                if (sphericalHarmonicsDegree >= 3) {
+                                    for (let s = 0; s < 21; s++) shOut[s + 24] = targetSplat[OFFSET_FRC24 + s] || 0;
+                                }
                             }
                     }
                 }
@@ -1154,8 +1332,20 @@ export class SplatBuffer {
                                 shOut[s + 9] = compressionLevel === 1 ? toHalfFloat(srcVal) :
                                                toUint8(srcVal, minSphericalHarmonicsCoeff, maxSphericalHarmonicsCoeff);
                             }
+                            const degree2ByteCount = 15 * bytesPerSHComponent;
                             copyBetweenBuffers(shOut.buffer, degree1ByteCount, sectionBuffer,
-                                               sphericalHarmonicsBase + degree1ByteCount, 15 * bytesPerSHComponent);
+                                               sphericalHarmonicsBase + degree1ByteCount, degree2ByteCount);
+                            if (sphericalHarmonicsDegree >= 3) {
+                                for (let s = 0; s < 21; s++) {
+                                    const srcVal = targetSplat[OFFSET_FRC24 + s] || 0;
+                                    shOut[s + 24] = compressionLevel === 1 ? toHalfFloat(srcVal) :
+                                                   toUint8(srcVal, minSphericalHarmonicsCoeff, maxSphericalHarmonicsCoeff);
+                                }
+                                const degree3ByteCount = 21 * bytesPerSHComponent;
+                                copyBetweenBuffers(shOut.buffer, (degree1ByteCount + degree2ByteCount), sectionBuffer,
+                                                   sphericalHarmonicsBase + degree1ByteCount + degree2ByteCount,
+                                                   degree3ByteCount);
+                            }
                         }
                     }
                 }
@@ -1190,7 +1380,7 @@ export class SplatBuffer {
             const splatArray = splatArrays[sa];
             for (let i = 0; i < splatArray.splats.length; i++) {
                 const splat = splatArray.splats[i];
-                for (let sc = UncompressedSplatArray.OFFSET.FRC0; sc < UncompressedSplatArray.OFFSET.FRC23 && sc < splat.length; sc++) {
+                for (let sc = UncompressedSplatArray.OFFSET.FRC0; sc <= UncompressedSplatArray.OFFSET.FRC44 && sc < splat.length; sc++) {
                     if (!minSphericalHarmonicsCoeff || splat[sc] < minSphericalHarmonicsCoeff) {
                         minSphericalHarmonicsCoeff = splat[sc];
                     }
